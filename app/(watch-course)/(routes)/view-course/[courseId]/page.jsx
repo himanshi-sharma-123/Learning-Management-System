@@ -4,12 +4,14 @@ import ChapterNav from "./_components/ChapterNav";
 import FullVideoPlayer from "./_components/FullVideoPlayer";
 import { UserButton, useUser } from "@clerk/nextjs";
 import { getCourseById } from "../../../../_services";
+import CompletedChapterContext from "../../../../../app/_context/CompletedChapterContext";
 
 function ViewCourse({ params }) {
   const { user } = useUser();
   const [course, setCourse] = useState([]);
   const [userCourse, setUserCourse] = useState();
   const [activeChapter, setActiveChapter] = useState();
+  const [completedChapter, setCompletedChapter] = useState();
 
   useEffect(() => {
     user ? getCourse() : null;
@@ -20,27 +22,37 @@ function ViewCourse({ params }) {
       params?.courseId,
       user.primaryEmailAddress.emailAddress
     ).then((res) => {
-      console.log(res);
+      console.log(res?.userEnrollCourses[0]?.completedChapter);
       setCourse(res.courseList);
       setUserCourse(res.userEnrollCourses);
+      setCompletedChapter(res?.userEnrollCourses[0]?.completedChapter);
     });
   };
   return (
     course?.name && (
-      <div className="flex">
-        <div className="w-72 border shadow-sm h-screen z-50">
-          <ChapterNav
-            course={course}
-            userCourse={userCourse}
-            setActiveChapter={(chapter) => setActiveChapter(chapter)}
-          />
-        </div>
-        <div>
-          <div className="float-right p-5">
-            <UserButton />
+      <div className="">
+        <CompletedChapterContext.Provider
+          value={{ completedChapter, setCompletedChapter }}
+        >
+          <div className="hidden fixed bg-white md:block md:w-80 border shadow-sm h-screen z-50">
+            {course ? (
+              <ChapterNav
+                course={course}
+                userCourse={userCourse}
+                setActiveChapter={(chapter) => setActiveChapter(chapter)}
+              />
+            ) : null}
           </div>
-          <FullVideoPlayer activeChapter={activeChapter} />
-        </div>
+          <div className="ml-80">
+            <div className="float-right p-5">
+              <UserButton />
+            </div>
+            <FullVideoPlayer
+              userCourse={userCourse}
+              activeChapter={activeChapter}
+            />
+          </div>
+        </CompletedChapterContext.Provider>
       </div>
     )
   );
